@@ -1,6 +1,5 @@
 {
     "ocaml.sandbox": {
-        "kind": "opam",
-        "switch": "SWITCHNAME"
+        "kind": "global"
     }
 }
