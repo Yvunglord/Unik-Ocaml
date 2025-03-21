@@ -1,0 +1,43 @@
+name: OCaml CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-version: '4.14.2'  # Укажите нужную версию OCaml
+
+      - name: Install dependencies
+        run: opam install . --deps-only --with-doc --with-test
+
+      - name: Check formatting with ocamlformat
+        run: |
+          ocamlformat --check $(find . -name '*.ml' -o -name '*.mli')
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-version: '4.14.2'  
+
+      - name: Install dependencies
+        run: opam install . --deps-only --with-doc --with-test
+
+      - name: Build the project
+        run: dune build @all
