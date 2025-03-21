@@ -1,5 +1,5 @@
 (library
  (name fp1)
- (modules hw1)
+ (modules hw1 rbtree parser)
  (inline_tests)
  (preprocess (pps ppx_expect)))
