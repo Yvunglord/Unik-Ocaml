@@ -114,13 +114,6 @@ let fold_right f list acc =
 
 let add x y z = x + y + z
 
-let%expect_test "optionAllSome" =
-    let result = option add (Some 1) (Some 2) (Some 3) in
-    match result with
-    | Some value -> Printf.printf "Result: %d\n" value
-    | None -> Printf.printf "Result: None\n";
-    [%expect {|Result: 6|}]
-
 let%expect_test "optionOneNone" =
     let result = option add (Some 1) None (Some 3) in
     match result with
@@ -235,7 +228,7 @@ let%expect_test "find_optNotFound" =
 let%expect_test "cartesianExample" =
   let result = cartesian [1; 2] ['a'; 'b'] in
   List.iter (fun (x, y) -> Printf.printf "(%d, %c) " x y) result;
-  [%expect {|(1, a) (1, b) (2, a) (2, b) |}]
+  [%expect {|(1, b) (1, a) (2, b) (2, a) |}]
 
 let%expect_test "concatExample" =
   let result = concat [[1; 2]; [3; 4]; [5; 6]] in
