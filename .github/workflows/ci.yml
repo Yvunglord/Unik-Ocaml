@@ -1,4 +1,4 @@
-name: OCaml CI
+name: CI
 
 on:
   push:
@@ -9,51 +9,30 @@ on:
       - master
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: '4.14.2'  
-
-      - name: Install dependencies
-        run: opam install . --deps-only --with-doc --with-test
-
-      - name: Check formatting with ocamlformat
-        run: |
-          ocamlformat --check $(find . -name '*.ml' -o -name '*.mli')
-
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache OPAM dependencies
+        id: cache-opam
+        uses: actions/cache@v3
         with:
-          ocaml-compiler: '4.14.2'  
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ hashFiles('**/opam') }}
+          restore-keys: |
+            opam-${{ runner.os }}-
 
-      - name: Install dependencies
-        run: opam install . --deps-only --with-doc --with-test
+      - name: Build Docker image
+        run: docker build -t fp1-ocaml-image .
 
-      - name: Build the project
-        run: dune build @all
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: '4.14.2'  
-
-      - name: Install dependencies
-        run: opam install . --deps-only --with-doc --with-test
+      - name: Run Docker container and build project
+        run: docker run --rm fp1-ocaml-image
 
       - name: Run tests
-        run: dune runtest
+        run: docker run --rm fp1-ocaml-image dune runtest
