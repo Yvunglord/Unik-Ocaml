@@ -94,23 +94,12 @@ let rec helper acc lst =
 in
 helper [] lst
 
-let fold_left f acc list =
-    let acc_ref = ref acc in
-    let current = ref list in
-    while !current <> [] do
-      acc_ref := f !acc_ref (List.hd !current);
-      current := List.tl !current
-    done;
-    !acc_ref
-  
-let fold_right f list acc =
-    let reversed = ref [] in
-    let current = ref list in
-    while !current <> [] do
-        reversed := List.hd !current :: !reversed;
-        current := List.tl !current
-    done;
-    fold_left (fun a b -> f b a) acc !reversed
+let rec fold_left f acc = function
+  | [] -> acc
+  | x :: xs -> fold_left f (f acc x) xs
+
+let fold_right f lst init =
+  fold_left (fun g x -> fun acc -> g (f x acc)) (fun x -> x) lst init
 
 let add x y z = x + y + z
 

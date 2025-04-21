@@ -89,3 +89,95 @@ let rec formula_equal f1 f2 =
           Ok state
         else Error "proof incomplete"
     | _ -> Error "tactic not applicable to current goal"
+  
+  let parse_tactic s =
+    match String.lowercase_ascii s with
+    | "equivintro" | "eq" -> EquivIntro
+    | "intros" | "in" -> Intros
+    | "notintros" | "no" -> NotIntros
+    | "axiom" | "ax" -> Axiom
+    | "apply" | "ap" -> Apply
+    | "andelim" | "an" -> AndElim
+    | "contradiction" | "co" -> Contradiction
+    | "qed" | "qe" -> Qed
+    | _ -> failwith ("Unknown tactic: " ^ s)
+  
+  let init_proof_state s =
+    match parse_formula s with
+    | Parsed (f, []) -> { goal = f; context = []; remaining_goals = [] }
+    | Parsed (_, _) -> failwith "Extra characters after formula"
+    | Failed -> failwith "Failed to parse formula"
+  
+  let rec string_of_formula = function
+    | Var v -> v
+    | Not f -> "~" ^ string_of_formula f
+    | And (f1, f2) ->
+        Printf.sprintf "(%s /\\ %s)" (string_of_formula f1) (string_of_formula f2)
+    | Or (f1, f2) ->
+        Printf.sprintf "(%s \\/ %s)" (string_of_formula f1) (string_of_formula f2)
+    | Implies (f1, f2) ->
+        Printf.sprintf "(%s -> %s)" (string_of_formula f1) (string_of_formula f2)
+    | Equiv (f1, f2) ->
+        Printf.sprintf "(%s <-> %s)" (string_of_formula f1) (string_of_formula f2)
+  
+  let print_state state =
+    Printf.printf "Current goal: %s\n" (string_of_formula state.goal);
+    if state.context <> [] then
+      Printf.printf "Context:\n  %s\n"
+        (String.concat "\n  " (List.map string_of_formula state.context));
+    if state.remaining_goals <> [] then
+      Printf.printf "Remaining goals: %d\n" (List.length state.remaining_goals);
+    print_newline ()
+  
+  let rec proof_loop state input_channel =
+    print_state state;
+    Printf.printf "Enter tactic (or 'help' for list): %!";
+    try
+      let input = input_line input_channel |> String.trim in
+      if input = "help" then (
+        Printf.printf "\nAvailable tactics:\n";
+        Printf.printf "  equivintro/eq - Introduce equivalence\n";
+        Printf.printf "  intros/in     - Introduce implication\n";
+        Printf.printf "  notintros/no  - Introduce negation\n";
+        Printf.printf "  axiom/ax      - Use axiom from context\n";
+        Printf.printf "  apply/ap      - Apply implication from context\n";
+        Printf.printf "  andelim/an    - Eliminate conjunction\n";
+        Printf.printf "  contradiction/co - Find contradiction\n";
+        Printf.printf "  qed/qe        - Complete proof\n\n";
+        proof_loop state input_channel)
+      else if input = "" then proof_loop state input_channel
+      else
+        let tactic = parse_tactic input in
+        match apply_tactic state tactic with
+        | Ok new_state ->
+            if formula_equal new_state.goal (Var "proved") && new_state.remaining_goals = [] then
+              Printf.printf "\nProof completed successfully!\n"
+            else
+              proof_loop new_state input_channel
+        | Error msg ->
+            Printf.printf "Error: %s\n" msg;
+            proof_loop state input_channel
+    with End_of_file ->
+      Printf.printf "\nEnd of input reached. Exiting.\n";
+      exit 0
+  
+  let interactive_mode () =
+    Printf.printf "Interactive Proof Assistant\n";
+    Printf.printf "Enter initial goal: %!";
+    let goal = read_line () in
+    proof_loop (init_proof_state goal) stdin
+  
+  let test_mode test_input =
+    let channel = open_in test_input in
+    try
+      let goal = input_line channel in
+      proof_loop (init_proof_state goal) channel
+    with e ->
+      close_in channel;
+      raise e
+  
+  let () =
+    if Array.length Sys.argv > 1 then
+      test_mode Sys.argv.(1)
+    else
+      interactive_mode ()

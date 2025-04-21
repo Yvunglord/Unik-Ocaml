@@ -1,6 +1,5 @@
 (library
  (name fp1)
  (modules hw1 rbtree parser prover)
-  (libraries angstrom)
- (inline_tests)
+ (libraries angstrom)
  (preprocess (pps ppx_expect)))
