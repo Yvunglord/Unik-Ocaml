@@ -1,4 +1,4 @@
-FROM ocaml/opam:ubuntu-22.04-ocaml-4.14
+FROM ocaml/opam:ubuntu-24.04-ocaml-4.14
 WORKDIR /app
 COPY . .
 RUN opam install ppx_expect -y
